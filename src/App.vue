@@ -2,8 +2,7 @@
   <div class="app">
     <div>Current Rating: {{ currentRating }}</div>
     <StarRating
-        :step="0.1"
-        :rating="currentRating"
+        :step="0.5"
         @update-rating="currentRating = $event"
     />
   </div>
@@ -16,7 +15,6 @@ const currentRating = ref(0)
 </script>
 
 <style scoped>
-/* this block can be deleted  */
 .app {
   display: flex;
   flex-direction: column;
@@ -29,5 +27,4 @@ const currentRating = ref(0)
   font-family: 'JetBrains Mono', monospace;
   background-color: #f7f7f7;
 }
-/* this block can be deleted  */
 </style>

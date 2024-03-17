@@ -1,6 +1,6 @@
 <template>
   <div
-      ref="rating"
+      ref="ratingRef"
       class="star-rating"
       :style="`--stars-between: ${starsBetween}px; --star-size: ${starSize}px;`"
       @mouseenter="enterRatingHandler"
@@ -12,7 +12,7 @@
       <div
           v-for="index in starLimit"
           :key="index"
-          ref="star"
+          ref="starsRef"
           class="star"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,7 +26,6 @@
             </clipPath>
           </defs>
         </svg>
-
       </div>
     </div>
     <div
@@ -50,7 +49,6 @@
             </clipPath>
           </defs>
         </svg>
-
       </div>
     </div>
     <div
@@ -74,134 +72,138 @@
             </clipPath>
           </defs>
         </svg>
-
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'StarRating',
-  props: {
-    rating: {
-      type: [Number, String],
-      default: 0,
-    },
-    starLimit: {
-      type: Number,
-      default: 5,
-    },
-    readOnly: {
-      type: Boolean,
-      default: false,
-    },
-    step: {
-      type: Number,
-      default: 1,
-    },
-    starSize: {
-      type: Number,
-      default: 48,
-    },
-    starsBetween: {
-      type: Number,
-      default: 8
-    }
+<script setup>
+import {computed, onMounted, ref} from "vue";
+
+const props = defineProps({
+  rating: {
+    type: [Number, String],
+    default: 0
   },
-  data() {
-    return {
-      currentPos: 0,
-      containerWidth: 0,
-      containerLeft: 0,
-      currentRating: 0,
-      plugRatingWidth: 0,
-      valueRatingWidth: 0,
-      showCurrentValue: true
-    };
+  starLimit: {
+    type: Number,
+    default: 5
   },
-  computed: {
-    maxSteps() {
-      return this.starLimit / this.step;
-    },
-    stepSize() {
-      return this.containerWidth / this.maxSteps;
-    },
-    ratingDecimalLength() {
-      return this?.step?.toString()?.split('.')?.[1]?.length ?? 0;
-    },
-    lastRatingValue() {
-      return Math.ceil(this.currentPos / this.stepSize) * this.step;
-    },
-    preparedRatingValue() {
-      return +this.lastRatingValue?.toFixed(this?.ratingDecimalLength) ?? 0;
-    }
+  readOnly: {
+    type: Boolean,
+    default: false
   },
-  created() {
-    if (this.rating) {
-      this.currentRating = +this.rating ?? 0;
-    }
+  step: {
+    type: Number,
+    default: 1
   },
-  mounted() {
-    if (typeof window !== 'undefined') {
-      const containerSizes = this.$refs?.rating?.getBoundingClientRect();
-      this.containerWidth = containerSizes?.width ?? 0;
-      this.containerLeft = containerSizes?.left ?? 0;
-
-      if (this.currentRating) {
-        this.setValueRatingWidth();
-      }
-    }
+  starSize: {
+    type: Number,
+    default: 48
   },
-  methods: {
-    enterRatingHandler() {
-      if (!this.readOnly) {
-        this.showCurrentValue = false;
-      }
-    },
-    leaveRatingHandler() {
-      if (!this.readOnly) {
-        this.showCurrentValue = true;
-      }
-    },
-    moveRatingHandler(e) {
-      if (!this.readOnly) {
-        this.currentPos = e.pageX - this.containerLeft;
-        this.setPlugRatingWidth();
+  starsBetween: {
+    type: Number,
+    default: 8
+  }
+});
 
-        this.$emit('move-rating', this.preparedRatingValue);
-      }
-    },
-    setRatingHandler() {
-      if (!this.readOnly) {
-        this.currentRating = this.preparedRatingValue;
+const emit = defineEmits(['move-rating', 'update-rating'])
 
-        this.setValueRatingWidth();
-        this.$emit('update-rating', this.currentRating);
-      }
-    },
-    setPlugRatingWidth() {
-      this.plugRatingWidth = this.calculateValueRatingWidth(this.lastRatingValue);
-    },
-    setValueRatingWidth() {
-      this.valueRatingWidth = this.calculateValueRatingWidth(this.currentRating);
-    },
-    calculateValueRatingWidth(value) {
-      const decimal = +`0.${value?.toString()?.split('.')?.[1] ?? 0}`;
-      const currentStarIndex = Math.ceil(value - 1);
-      const currentStarElement = this.$refs?.star?.[currentStarIndex];
+const currentPos = ref(0);
+const ratingRef = ref(null);
+const ratingWidth = ref(0);
+const ratingLeft = ref(0);
+const starsRef = ref([]);
+const currentRating = ref(props.rating ?? 0);
+const plugRatingWidth = ref(0);
+const valueRatingWidth = ref(0);
+const showCurrentValue = ref(false);
 
-      if (currentStarElement) {
-        const currentStarPosition = currentStarElement?.getBoundingClientRect();
-        const starFillWidth = decimal ? (this.starSize * decimal) : this.starSize;
+const maxSteps = computed(() => {
+  return props.starLimit / props.step;
+});
 
-        return ((currentStarPosition?.left - this.containerLeft) + starFillWidth) ?? 0;
-      }
+const stepSize = computed(() => {
+  return ratingWidth.value / maxSteps.value;
+});
 
-      return 0;
+const ratingDecimalLength = computed(() => {
+  return props.step?.toString()?.split('.')?.[1]?.length ?? 0;
+});
+
+const lastRatingValue = computed(() => {
+  return Math.ceil(currentPos.value / stepSize.value) * props.step;
+});
+
+const preparedRatingValue = computed(() => {
+  return +lastRatingValue.value?.toFixed(ratingDecimalLength.value) ?? 0;
+});
+
+const enterRatingHandler = () => {
+  if (!props.readOnly) {
+    showCurrentValue.value = false;
+  }
+}
+
+const leaveRatingHandler = () => {
+  if (!props.readOnly) {
+    showCurrentValue.value = true;
+  }
+}
+
+const moveRatingHandler = (e) => {
+  if (!props.readOnly) {
+    currentPos.value = e.pageX - ratingLeft.value;
+    setPlugRatingWidth();
+
+    emit('move-rating', preparedRatingValue.value);
+  }
+}
+
+const setRatingHandler = () => {
+  if (!props.readOnly) {
+    currentRating.value = preparedRatingValue.value;
+
+    setValueRatingWidth();
+    emit('update-rating', currentRating.value);
+  }
+}
+
+const setPlugRatingWidth = () => {
+  plugRatingWidth.value = calculateValueRatingWidth(lastRatingValue.value);
+}
+
+const setValueRatingWidth = () => {
+  valueRatingWidth.value = calculateValueRatingWidth(currentRating.value);
+}
+
+const calculateValueRatingWidth = (value) => {
+  const decimal = +`0.${value?.toString()?.split('.')?.[1] ?? 0}`;
+  const currentStarIndex = Math.ceil(value - 1);
+  const currentStarElement = starsRef.value?.[currentStarIndex];
+
+  if (currentStarElement) {
+    const currentStarPosition = currentStarElement?.getBoundingClientRect();
+    const starFillWidth = decimal ? (props.starSize * decimal) : props.starSize;
+
+    return ((currentStarPosition?.left - ratingLeft.value) + starFillWidth) ?? 0;
+  }
+
+  return 0;
+}
+
+onMounted(() => {
+  const ratingClientRect = ratingRef.value?.getBoundingClientRect();
+
+  if (ratingClientRect) {
+    ratingWidth.value = ratingClientRect?.width ?? 0;
+    ratingLeft.value = ratingClientRect?.left ?? 0;
+
+    if (currentRating.value) {
+      setValueRatingWidth();
     }
   }
-};
+});
 </script>
 
 <style lang="scss">
