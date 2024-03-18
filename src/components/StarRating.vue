@@ -178,7 +178,7 @@ const setValueRatingWidth = () => {
 }
 
 const calculateValueRatingWidth = (value) => {
-  const decimal = +`0.${value?.toString()?.split('.')?.[1] ?? 0}`;
+  const decimal = value % 1;
   const currentStarIndex = Math.ceil(value - 1);
   const currentStarElement = starsRef.value?.[currentStarIndex];
 
@@ -206,8 +206,7 @@ onMounted(() => {
 });
 </script>
 
-<style lang="scss">
-
+<style scoped lang="scss">
 .star {
   width: var(--star-size);
   height: var(--star-size);

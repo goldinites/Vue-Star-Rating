@@ -24,7 +24,7 @@ const currentRating = ref(0)
   height: 100vh;
   font-size: 25px;
   line-height: 30px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: monospace;
   background-color: #f7f7f7;
 }
 </style>
